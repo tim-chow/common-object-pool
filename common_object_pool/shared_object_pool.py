@@ -1,4 +1,4 @@
-from .abstract_object_poll import AbstractObjectPool
+from .abstract_object_pool import AbstractObjectPool
 
 
 class SharedObjectPool(AbstractObjectPool):
