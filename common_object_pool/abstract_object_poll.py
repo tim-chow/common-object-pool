@@ -120,7 +120,7 @@ class AbstractObjectPool(object):
                 LOGGER.debug("store newly created object %d", object_id)
                 self.store_newly_created_object(object_id, obj)
                 return object_id, obj
-            LOGGER.error("fail to create object", exc_info=True)
+            LOGGER.error("fail to create object")
             raise exc_info[0], exc_info[1], exc_info[2]
 
     @abc.abstractmethod
@@ -184,9 +184,11 @@ class AbstractObjectPool(object):
                 raise RuntimeError("pool closed")
 
             if self.is_using(object_id):
+                self._created_count = self._created_count - 1
                 LOGGER.debug("drop using object %d", object_id)
                 self.remove_using_object_from_pool(object_id)
             elif self.is_idle(object_id):
+                self._created_count = self._created_count - 1
                 LOGGER.debug("drop idle object %d", object_id)
                 self.remove_idle_object_from_pool(object_id)
             else:

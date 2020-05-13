@@ -1,8 +1,7 @@
 import logging
 
 from common_object_pool.dedicate_object_pool import DedicateObjectPool
-from common_object_pool import get_object
-from common_object_pool.exceptions import ObjectUnusable
+from common_object_pool.exceptions import MaxAttemptsReached
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -12,21 +11,26 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 
-def test(raise_=False, timeout=2, max_attempts=2):
+def test(timeout=1, max_attempts=2):
     max_count = 2
     pool = DedicateObjectPool(max_count, object)
 
-    try:
-        with get_object(pool, timeout, max_attempts) as obj:
-            if raise_:
-                raise ObjectUnusable("object is unusable")
-    except ObjectUnusable:
-        pass
+    for _ in range(max_count):
+        object_id, _ = pool.get_object(timeout, max_attempts)
+        pool.drop_object(object_id)
 
-    with get_object(pool, timeout, max_attempts) as obj:
-        LOGGER.info("object is %r" % obj)
+    for _ in range(max_count):
+        _, obj = pool.get_object(timeout, max_attempts)
+        LOGGER.debug("object is %r", obj)
+
+    try:
+        _, obj = pool.get_object(timeout, max_attempts)
+    except MaxAttemptsReached:
+        LOGGER.debug("max attempts reached")
+
+    pool.close()
 
 
 if __name__ == "__main__":
     test()
-    test(True)
+
